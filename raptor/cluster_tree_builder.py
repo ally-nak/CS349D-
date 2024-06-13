@@ -177,10 +177,8 @@ class ClusterTreeBuilder(TreeBuilder):
             if not parent_nodes:
                 break
             parent_node = parent_nodes[0]
-
             new_summary = self.summarize(new_cluster_text, max_tokens=self.summarization_length)
             parent_node.text = new_summary
-
             current_node = parent_node
             current_index = parent_node.index
 
