@@ -1,5 +1,6 @@
 import logging
 import pickle
+import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from typing import Dict, List, Set
@@ -9,7 +10,7 @@ from .tree_builder import TreeBuilder, TreeBuilderConfig
 from .tree_structures import Node, Tree
 from .utils import (distances_from_embeddings, get_children, get_embeddings,
                     get_node_list, get_text,
-                    indices_of_nearest_neighbors_from_distances, split_text)
+                    indices_of_nearest_neighbors_from_distances, split_text, cosine_similarity)
 
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
@@ -149,3 +150,37 @@ class ClusterTreeBuilder(TreeBuilder):
             )
 
         return current_level_nodes
+
+    def add_new_text(self, new_text: str, all_tree_nodes: Dict[int, Node], layer_to_nodes: Dict[int, List[Node]]) -> None:
+        logging.info("Adding new text to the Cluster TreeBuilder")
+        chunks = split_text(new_text, self.tokenizer, self.max_tokens)
+        new_nodes = []
+        for chunk in chunks:
+            new_index = len(all_tree_nodes) + len(new_nodes)
+            new_node = self.create_node(new_index, chunk)[1]
+            new_nodes.append(new_node)
+        leaf_nodes = layer_to_nodes[0]
+        similarities = [
+            (leaf, cosine_similarity(new_nodes[0].embeddings[self.cluster_embedding_model], leaf.embeddings[self.cluster_embedding_model]))
+            for leaf in leaf_nodes
+        ]
+        most_similar_leaf = max(similarities, key=lambda x: x[1])[0]
+        for new_node in new_nodes:
+            most_similar_leaf.children.add(new_node.index)
+            all_tree_nodes[new_node.index] = new_node
+        layer_to_nodes[0].extend(new_nodes)
+        new_cluster_text = get_text([most_similar_leaf] + new_nodes)
+        current_node = most_similar_leaf
+        current_index = most_similar_leaf.index
+        for layer in range(1, self.num_layers):
+            parent_nodes = [node for node in all_tree_nodes.values() if current_index in node.children]
+            if not parent_nodes:
+                break
+            parent_node = parent_nodes[0]
+
+            new_summary = self.summarize(new_cluster_text, max_tokens=self.summarization_length)
+            parent_node.text = new_summary
+
+            current_node = parent_node
+            current_index = parent_node.index
+

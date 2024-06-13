@@ -10,6 +10,9 @@ from .tree_structures import Node
 
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
+    
+def cosine_similarity(embedding1, embedding2):
+    return np.dot(embedding1, embedding2) / (np.linalg.norm(embedding1) * np.linalg.norm(embedding2))
 
 def reverse_mapping(layer_to_nodes: Dict[int, List[Node]]) -> Dict[Node, int]:
     node_to_layer = {}

@@ -293,6 +293,18 @@ class TreeBuilder:
         tree = Tree(all_nodes, root_nodes, leaf_nodes, self.num_layers, layer_to_nodes)
 
         return tree
+    
+    @abstractclassmethod
+    def add_new_text(self, new_text: str, all_tree_nodes: Dict[int, Node], layer_to_nodes: Dict[int, List[Node]]) -> None:
+        """
+        Adds new text to the tree structure by clustering it with the most similar existing leaf node.
+
+        Args:
+            new_text (str): The new text to be added.
+            all_tree_nodes (Dict[int, Node]): The dictionary of all nodes in the tree.
+            layer_to_nodes (Dict[int, List[Node]]): The dictionary mapping layer indices to nodes.
+        """
+        pass
 
     @abstractclassmethod
     def construct_tree(

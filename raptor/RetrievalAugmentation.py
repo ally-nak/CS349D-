@@ -213,10 +213,22 @@ class RetrievalAugmentation:
                 "Warning: Overwriting existing tree. Did you mean to call 'add_to_existing' instead? (y/n): "
             )
             if user_input.lower() == "y":
-                # self.add_to_existing(docs)
+                self.add_to_existing(docs)
                 return
 
         self.tree = self.tree_builder.build_from_text(text=docs)
+        self.retriever = TreeRetriever(self.tree_retriever_config, self.tree)
+
+    def add_to_existing(self, docs):
+        "add additional text to existing tree"
+        print("HELELOOO")
+        if self.tree is None:
+            raise ValueError("There is no tree to add to. Call 'add_documents' first.")
+        self.tree_builder.add_new_text(
+            new_text=docs, 
+            all_tree_nodes=self.tree.all_nodes, 
+            layer_to_nodes=self.tree.layer_to_nodes
+        )
         self.retriever = TreeRetriever(self.tree_retriever_config, self.tree)
 
     def retrieve(
